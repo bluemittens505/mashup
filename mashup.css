@@ -1,0 +1,21 @@
+h1 {
+	color: #000066;
+}
+p {
+	color: #0000CC;
+}
+div.category {
+	height: 20px;
+	width: 60%;
+	border: 2px solid #000066;
+}
+div.category span {
+	display: inline-block;
+}
+div.category span.close {
+	visibility: hidden;
+	float: right;
+}
+#mammalnews,#birdnews,#reptilenews,#fishnews,#amphibiannews,#insectnews {
+	display: none;
+}

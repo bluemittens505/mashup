@@ -37,69 +37,73 @@ Category.prototype.genHtml = function() {
     return htmlString;
 };
 
-var genCategories = function() {
-    var categories = [];
-    categories.push(new Category('Mammal'));
-    categories.push(new Category('Bird'));
-    categories.push(new Category('Reptile'));
-    categories.push(new Category('Fish'));
-    categories.push(new Category('Amphibian'));
-    categories.push(new Category('Insect'));
-    return categories;
+var displayErrMsg = function() {
+    $('#msg').remove();
+    $('body').append('<p id="msg">*** Issue with response ***</p>');
 };
 
-var closeAction = function(event) {
-    $(this).css('visibility','hidden');
-    $(event.data.newsSelectorId).slideUp('slow').empty();
+var validArticle = function(article) {
+    return (article.fields !== undefined && article.fields.thumbnail !== undefined);
 };
 
-var getNewsAction = function(event) {
+var displayArticle = function(event,article) {
     var newsSelectorId = event.data.newsSelectorId;
-    var closeSelectorId = event.data.closeSelectorId;
-    var fullUrl = event.data.url;            
-    if ( $(newsSelectorId).css('display') === 'none' ) {
+    var thumbnail = article.fields.thumbnail;
+    $(newsSelectorId).append('<img src="' + thumbnail + '"/>');
+    var articleTitle = article.webTitle;
+    $(newsSelectorId).append('<h2>' + articleTitle + '</h2>');
+    var byLine = article.fields.byline;
+    $(newsSelectorId).append('<h3>' + byLine + '</h3>');
+    var summary = article.blocks.body[0].bodyTextSummary.substring(0,400);
+    $(newsSelectorId).append('<p>' + summary + ' ...</p>');
+    var articleUrl = article.webUrl;
+    $(newsSelectorId).append('<a href="' + articleUrl + '">Full Article</a>');
+};
+
+var displayNews = function(event,data) {
+    var count = 0;
+    for (var i = 0; i < data.response.results.length && count < 10; i++ ) {
+        switch (data.response.results[i].type) {
+            case 'article':
+                if ( validArticle(data.response.results[i]) ) {
+                    count++;
+                    displayArticle(event,data.response.results[i]);
+                }
+                break;
+            // add cases for other types
+        }
+    }
+    $(event.data.newsSelectorId).css('display','block');
+    $(event.data.closeSelectorId).css('visibility','visible');
+};
+
+var openHandler = function(event) {
+    if ( $(event.data.newsSelectorId).css('display') === 'none' ) {
         $.ajax({
-            url: fullUrl,
+            url: event.data.url,
             success: function(data) {
                 if (data.response.status !== "ok") {
-                    $('body').append('<p id="msg">*** Issue with response ***</p>');
+                    displayErrMsg();
                 } else {
-                    for (var i = 0; i < data.response.results.length && i < 10; i++ ) {
-                        var result = data.response.results[i];
-                        if ( result.type === 'article' && result.fields !== undefined  && result.fields.thumbnail !== undefined) {
-                            var thumbnail = result.fields.thumbnail;
-                            $(newsSelectorId).append('<img src="' + thumbnail + '"/>');
-                            var articleTitle = result.webTitle;
-                            $(newsSelectorId).append('<h2>' + articleTitle + '</h2>');
-                            var byLine = result.fields.byline;
-                            $(newsSelectorId).append('<h3>' + byLine + '</h3>');
-                            var summary = result.blocks.body[0].bodyTextSummary.substring(0,400);
-                            $(newsSelectorId).append('<p>' + summary + ' ...</p>');
-                            var articleUrl = result.webUrl;
-                            $(newsSelectorId).append('<a href="' + articleUrl + '">Full Article</a>');
-                        }
-                    }
-                    $(newsSelectorId).css('display','block');
-                    $(closeSelectorId).css('visibility','visible');
+                    displayNews(event,data);
                 }
             }
         });
     }
 };
 
+var closeHandler = function(event) {
+    $(this).css('visibility','hidden');
+    $(event.data.newsSelectorId).slideUp('slow').empty();
+};
+
 var setUp = function() {
-    var categories = genCategories();
+    var categories = ['Mammal','Bird','Reptile','Fish','Amphibian','Insect'];
     for (var i = 0; i < categories.length; i++) {
-        var category = categories[i];
+        var category = new Category(categories[i]);
         $('body').append(category.genHtml());
-        $(category.selectorId).click({
-            newsSelectorId: category.newsSelectorId,
-            closeSelectorId: category.closeSelectorId,
-            url: category.url
-        },getNewsAction);
-        $(category.closeSelectorId).click({
-            newsSelectorId: category.newsSelectorId
-        },closeAction);
+        $(category.selectorId).click(category,openHandler);
+        $(category.closeSelectorId).click(category,closeHandler);
     }
 };
 

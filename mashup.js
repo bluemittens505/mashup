@@ -30,34 +30,58 @@ var Category = function(title) {
 };
 
 Category.prototype.genHtml = function() {
-    var htmlString = '<div class="category" id="' + this.elementId + '">';
-    htmlString += '<span>' + this.title + '</span>';
+    var htmlString = '<div class="category">';
+    htmlString += '<span class="open" id="' + this.elementId + '">' + this.title + '</span>';
     htmlString += '<span class="close" id="' + this.closeElementId + '">X</span></div>';
-    htmlString +='<div id="' + this.newsElementId + '"></div>';
+    htmlString +='<section id="' + this.newsElementId + '"></section>';
     return htmlString;
 };
 
-var displayErrMsg = function() {
-    $('#msg').remove();
-    $('body').append('<p id="msg">*** Issue with response ***</p>');
+var ArticleDate = function(dateString) {
+    this.date = new Date(dateString)
 };
 
-var validArticle = function(article) {
-    return (article.fields !== undefined && article.fields.thumbnail !== undefined);
+ArticleDate.prototype.toArticleDateString = function() {
+    return((this.date.getMonth() + 1) + '/' + this.date.getDate() + '/' + this.date.getFullYear());
 };
 
-var displayArticle = function(event,article) {
-    var newsSelectorId = event.data.newsSelectorId;
-    var thumbnail = article.fields.thumbnail;
-    $(newsSelectorId).append('<img src="' + thumbnail + '"/>');
-    var articleTitle = article.webTitle;
-    $(newsSelectorId).append('<h2>' + articleTitle + '</h2>');
-    var byLine = article.fields.byline;
-    $(newsSelectorId).append('<h3>' + byLine + '</h3>');
-    var summary = article.blocks.body[0].bodyTextSummary.substring(0,400);
-    $(newsSelectorId).append('<p>' + summary + ' ...</p>');
-    var articleUrl = article.webUrl;
-    $(newsSelectorId).append('<a href="' + articleUrl + '">Full Article</a>');
+var Article = function(article) {
+    this.article = article;
+};
+
+Article.prototype.valid = function() {
+    return (this.article.fields !== undefined && this.article.fields.thumbnail !== undefined);
+};
+
+Article.prototype.byLine = function() {
+    var byLine = this.article.fields.byline;
+    if ( byLine === undefined ) {
+        byLine = 'theguardian.com';
+    }
+    return byLine;
+};
+
+Article.prototype.articleDate = function() {
+    var articleDate = new ArticleDate(this.article.webPublicationDate);
+    return articleDate.toArticleDateString();
+};
+
+Article.prototype.summary = function() {
+    var summary = this.article.blocks.body[0].bodyTextSummary.substring(0,415);
+    // assumes there is a blank
+    return summary.substring(0,summary.lastIndexOf(' '));
+};
+
+Article.prototype.genHtml = function() {
+    var htmlString = '<article>';
+    htmlString += '<h2>' + this.article.webTitle + '</h2>';
+    htmlString += '<h3>' + this.byLine() + '</h3><div class="separator"></div>';
+    htmlString += '<h3>' + this.articleDate() + '</h3>';
+    htmlString += '<div class="clear"><img src="' + this.article.fields.thumbnail + '"/>';
+    htmlString += '<p>' + this.summary() + ' ...';
+    htmlString += '<a href="' + this.article.webUrl + '">Read the full article</a></p></div>';
+    htmlString += '</article>';
+    return htmlString;
 };
 
 var displayNews = function(event,data) {
@@ -65,9 +89,10 @@ var displayNews = function(event,data) {
     for (var i = 0; i < data.response.results.length && count < 10; i++ ) {
         switch (data.response.results[i].type) {
             case 'article':
-                if ( validArticle(data.response.results[i]) ) {
+                var article = new Article(data.response.results[i]);
+                if ( article.valid() ) {
                     count++;
-                    displayArticle(event,data.response.results[i]);
+                    $(event.data.newsSelectorId).append(article.genHtml());
                 }
                 break;
             // add cases for other types
@@ -77,15 +102,20 @@ var displayNews = function(event,data) {
     $(event.data.closeSelectorId).css('visibility','visible');
 };
 
+var displayErrMsg = function() {
+    $('#msg').remove();
+    $('body').append('<p id="msg">*** Issue with response ***</p>');
+};
+
 var openHandler = function(event) {
     if ( $(event.data.newsSelectorId).css('display') === 'none' ) {
         $.ajax({
             url: event.data.url,
             success: function(data) {
-                if (data.response.status !== "ok") {
-                    displayErrMsg();
-                } else {
+                if (data.response.status === "ok") {
                     displayNews(event,data);
+                } else {
+                    displayErrMsg();
                 }
             }
         });
@@ -98,10 +128,12 @@ var closeHandler = function(event) {
 };
 
 var setUp = function() {
-    var categories = ['Mammal','Bird','Reptile','Fish','Amphibian','Insect'];
+    var categories = [
+        'Mammal','Bird','Reptile','Fish','Amphibian','Insect','Worm','Crustacean','Coral','Protozoan','Dinosaur'
+    ];
     for (var i = 0; i < categories.length; i++) {
         var category = new Category(categories[i]);
-        $('body').append(category.genHtml());
+        $('main').append(category.genHtml());
         $(category.selectorId).click(category,openHandler);
         $(category.closeSelectorId).click(category,closeHandler);
     }
@@ -109,35 +141,4 @@ var setUp = function() {
 
 $(document).ready(function() {
     setUp();
-    // $('.category').click(function() {
-    //     var display = $('#mammalnews').css('display');
-    //     if ( display === 'none' ) {
-    //         $.ajax({
-    //             url: "http://content.guardianapis.com/search?q=mammal&order-by=relevance&page-size=50&show-fields=thumbnail%2Cbyline&show-blocks=body&api-key=2700505f-b667-4f0a-adc0-b024f02abe57",
-    //             success: function(data) {
-    //                 if (data.response.status !== "ok") {
-    //                     $('body').append('<p id="msg">*** Issue with response from Guardian ***</p>');
-    //                 } else {
-    //                     for (var i = 0; i < data.response.results.length && i < 10; i++ ) {
-    //                         var result = data.response.results[i];
-    //                         if ( result.type === 'article') {
-    //                             var thumbnail = result.fields.thumbnail;
-    //                             $('#mammalnews').append('<img src="' + thumbnail + '"/>');
-    //                             var title = result.webTitle;
-    //                             $('#mammalnews').append('<h2>' + title + '</h2>');
-    //                             var byLine = result.fields.byline;
-    //                             $('#mammalnews').append('<h3>' + byLine + '</h3>');
-    //                             var summary = result.blocks.body[0].bodyTextSummary.substring(0,400);
-    //                             $('#mammalnews').append('<p>' + summary + ' ...</p>');
-    //                             var articleUrl = result.webUrl;
-    //                             $('#mammalnews').append('<a href="' + articleUrl + '">Full Article</a>');
-    //                         }
-    //                     }
-    //                     $('#mammalnews').css('display','block');
-    //                     $('#mammalclose').css('visibility','visible');
-    //                 }
-    //             }
-    //         });
-    //     }
-    // });
 });

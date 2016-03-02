@@ -1,21 +1,88 @@
-h1 {
+body {
+	font-family: Frutiger,"Frutiger Linotype",Univers,Calibri,"Liberation Sans","Nimbus Sans L",Tahoma,Geneva,"Helvetica Neue",Helvetica,Arial,sans-serif;
 	color: #000066;
 }
 p {
 	color: #0000CC;
 }
-div.category {
-	height: 20px;
-	width: 60%;
-	border: 2px solid #000066;
+header {
+	padding-bottom: 20px;
 }
-div.category span {
-	display: inline-block;
+header h1 {
+	font-family: 'Lobster', cursive;
+	font-size: 50px;
+	text-align: center;
+}
+header p {
+	width: 90%;
+	margin: 0 auto;
+	font-size: 18px;
+	text-align: center;
+}
+div.category {
+	width: 90%;
+	margin: 0 auto;
+	font-size: 30px;
+	border: 1px solid #000066;
+	background-color: #ffffb3;
+}
+div.category span.open {
+	padding-left: 10px;
+	cursor: pointer;
+}
+div.category span.open:hover {
+	letter-spacing: 10px;
 }
 div.category span.close {
+	font-family: 'PT Sans', sans-serif;
+	padding-right: 10px;
 	visibility: hidden;
 	float: right;
+	cursor: pointer;
 }
-#mammalnews,#birdnews,#reptilenews,#fishnews,#amphibiannews,#insectnews {
+section[id*="news"] {
+	width: 90%;
+	margin: 0 auto;
 	display: none;
+	position:relative;
+}
+section[id*="news"] article {
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+section[id*="news"] h2 {
+	margin-bottom: 10px;
+}
+section[id*="news"] h3 {
+	color: #0000b3;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+section[id*="news"] div.separator {
+	width: 50%;
+	border-bottom: 1px solid #000066;
+}
+section[id*="news"] img {
+	border: #e1e1ea solid 5px;
+	box-shadow: 4px 4px 5px #999999;
+	margin: 16px;
+	float:left;
+}
+section[id*="news"] a {
+	padding-left: 10px;
+	padding-right: 10px;
+	color: #3d3d5c;
+	text-decoration: none;
+}
+section[id*="news"] a:hover {
+	border-radius: 6px;
+	color: #ffffff;
+	background-color: #3d3d5c;
+}
+.clear:after {
+	content: ".";
+	display: block;
+	height: 0;
+	clear: both;
+	visibility: hidden;
 }
